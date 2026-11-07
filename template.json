@@ -1,0 +1,281 @@
+{
+  "name": "Utopia v0.1 RC9 Enterprise World Model",
+  "description": "Bitemporal knowledge graph from your documents: search, chat, review, MCP",
+  "category": "AI/ML",
+  "tags": [
+    "utopia",
+    "knowledge-graph",
+    "bitemporal",
+    "ontology",
+    "rag",
+    "mcp",
+    "pgvector",
+    "rust"
+  ],
+  "image": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/orbit.svg",
+  "upstream": {
+    "repo": "deeplethe/utopia",
+    "version": "v0.1.0-rc9 (pre-release, published 2026-10-11; tag commit 888761cae3d7c9432b75164ccd715731ccf2999d)",
+    "images": {
+      "utopia": "ghcr.io/deeplethe/utopia:0.1.0-rc9@sha256:9bba072bf510519425c141e71642cdfaf085c2b8dfde2b9c35bb8c6a31b95755 (amd64 sha256:857f82b5c4b44513f509bf2e351c2992f9cf5c406dba93ab7c3cc5a7a00c6f34, arm64 sha256:a975c5a94ab94b28b5a3797933c82c834600c6e24e962ca496f6dccc331bac8d, created 2026-10-11)",
+      "postgres": "ghcr.io/railwayapp-templates/postgres-ssl:18 (index sha256:4fc833b43d2aaf6ecc9b18615f5533602b723a32d0e2efe2dae8ca0f7217c863, PostgreSQL 18.6, pgvector 0.8.*, built 2026-10-23)"
+    },
+    "checked": "2026-11-07"
+  },
+  "services": {
+    "Utopia": {
+      "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/orbit.svg",
+      "source": {
+        "repo": "baranberkay96/utopia-railway",
+        "rootDirectory": "/services/utopia"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/api/v1/health",
+      "healthcheckTimeout": 1200,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": true,
+      "targetPort": 1516,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/app/data"
+      },
+      "variables": {
+        "ADMIN_EMAIL": {
+          "defaultValue": "admin@example.com",
+          "description": "Login email of the administrator account created on the first boot (upstream makes the first account the system administrator). Change it to yours before deploying; you sign in with exactly this value.",
+          "required": true
+        },
+        "ADMIN_PASSWORD": {
+          "defaultValue": "${{secret(24, \"abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789\")}}",
+          "description": "Password of that account, generated at deploy (min. 8 characters). Used on the first boot only: change it later in the app, not here.",
+          "required": true
+        },
+        "MODEL_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional. API key of an OpenAI-compatible provider; on the first boot it is stored, encrypted, as the default workspace's chat and embedding key. Empty = set models later in Administration -> Models (Utopia still boots).",
+          "required": false
+        },
+        "MODEL_BASE_URL": {
+          "defaultValue": "https://api.openai.com/v1",
+          "description": "OpenAI-compatible endpoint for chat (and embeddings unless EMBEDDING_BASE_URL is set), e.g. https://api.deepseek.com/v1. First boot only.",
+          "required": false
+        },
+        "CHAT_MODEL": {
+          "defaultValue": "gpt-4o-mini",
+          "description": "Chat model for extraction, adjudication and answers (upstream's OpenAI preset). First boot only.",
+          "required": false
+        },
+        "EMBEDDING_MODEL": {
+          "defaultValue": "text-embedding-3-small",
+          "description": "Embedding model for search and entity matching (upstream's OpenAI preset). Keep it once documents are in; empty = no embedding model (documents wait). First boot only.",
+          "required": false
+        },
+        "EMBEDDING_BASE_URL": {
+          "defaultValue": "",
+          "description": "Optional embedding endpoint when it differs from MODEL_BASE_URL (DeepSeek, for example, has no embeddings). First boot only.",
+          "required": false
+        },
+        "EMBEDDING_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional key for EMBEDDING_BASE_URL; empty = MODEL_API_KEY. First boot only.",
+          "required": false
+        },
+        "ADMIN_NAME": {
+          "defaultValue": "Administrator",
+          "description": "Display name of the administrator account (1-64 characters). First boot only.",
+          "required": false
+        },
+        "OPEN_REGISTRATION": {
+          "defaultValue": "false",
+          "description": "First boot: false = only administrators add people (Administration -> Users); true = anyone who can open the URL may sign up as a viewer. Changeable later in Administration -> Deployment.",
+          "required": false
+        },
+        "PORT": {
+          "defaultValue": "1516",
+          "description": "Port utopia-server listens on ([::], dual stack): public domain target and healthcheck port.",
+          "required": true
+        },
+        "UTOPIA_IMAGE": {
+          "defaultValue": "ghcr.io/deeplethe/utopia:0.1.0-rc9@sha256:9bba072bf510519425c141e71642cdfaf085c2b8dfde2b9c35bb8c6a31b95755",
+          "description": "Upstream image the build starts FROM (Docker build argument): v0.1.0-rc9, a pre-release. Upgrade by changing tag and digest together; migrations are forward-only, back up first.",
+          "required": true
+        },
+        "UTOPIA_MIGRATION_URL": {
+          "defaultValue": "${{Postgres.DATABASE_URL}}",
+          "description": "Owner connection (Postgres superuser): applies the schema migrations at startup, builds vector indexes and creates the utopia_app role.",
+          "required": true
+        },
+        "UTOPIA_APP_DB_PASSWORD": {
+          "defaultValue": "${{secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Password of the least-privilege runtime role utopia_app, created by the start wrapper and re-applied on every start (letters and digits only).",
+          "required": true
+        },
+        "UTOPIA_DATABASE_URL": {
+          "defaultValue": "postgresql://utopia_app:${{UTOPIA_APP_DB_PASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}",
+          "description": "Runtime connection as utopia_app: business tables read/write, the audit ledger append-only (upstream's optional hardening).",
+          "required": true
+        },
+        "DB_LEAST_PRIVILEGE": {
+          "defaultValue": "true",
+          "description": "true = run the app as utopia_app; false = as the Postgres owner (upstream default). A database first started as the owner stays on the owner (logged).",
+          "required": false
+        },
+        "UTOPIA_SECRET_KEY": {
+          "defaultValue": "${{secret(64, \"0123456789abcdef\")}}",
+          "description": "AES-256-GCM key (64 hex characters) that seals model API keys, connection strings and source tokens in the database. Keep it: without it those values cannot be read.",
+          "required": true
+        },
+        "UTOPIA_DATA_DIR": {
+          "defaultValue": "/app/data",
+          "description": "Uploaded originals (files/) and the full-text index (index/), on this service's volume. Back it up together with the database.",
+          "required": true
+        },
+        "UTOPIA_DB_MAX_CONNECTIONS": {
+          "defaultValue": "32",
+          "description": "Database connection pool size (upstream default; matches the default job concurrency).",
+          "required": false
+        },
+        "UTOPIA_COOKIE_SECURE": {
+          "defaultValue": "true",
+          "description": "Mark session cookies Secure (Railway serves HTTPS).",
+          "required": false
+        },
+        "RUNTIME_THREADS": {
+          "defaultValue": "auto",
+          "description": "Async runtime threads (TOKIO_WORKER_THREADS). auto = the service's CPU quota, 2 to 8; or a number.",
+          "required": false
+        },
+        "RUST_LOG": {
+          "defaultValue": "info",
+          "description": "Log level (tracing EnvFilter syntax, e.g. info or info,utopia_server=debug).",
+          "required": false
+        },
+        "UTOPIA_OIDC_ISSUER": {
+          "defaultValue": "",
+          "description": "Optional single sign-on: OIDC issuer URL (https). SSO is on when issuer, client id and redirect URI are all set; people link their identity from their account page.",
+          "required": false
+        },
+        "UTOPIA_OIDC_CLIENT_ID": {
+          "defaultValue": "",
+          "description": "Optional single sign-on: OIDC client id.",
+          "required": false
+        },
+        "UTOPIA_OIDC_CLIENT_SECRET": {
+          "defaultValue": "",
+          "description": "Optional single sign-on: OIDC client secret, if your identity provider requires one.",
+          "required": false
+        },
+        "UTOPIA_OIDC_REDIRECT_URI": {
+          "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}/api/v1/auth/oidc/callback",
+          "description": "Callback URL to register at your identity provider (update it if you add a custom domain).",
+          "required": false
+        }
+      }
+    },
+    "Postgres": {
+      "icon": "https://devicons.railway.app/i/postgresql.svg",
+      "source": {
+        "image": "ghcr.io/railwayapp-templates/postgres-ssl:18"
+      },
+      "startCommand": "/usr/bin/tini -g -- /bin/bash -c 'set -e; D=\"${PGDATA%/}\"; F=\"$D/pgvector-tuning.conf\"; C=\"$D/postgresql.conf\"; I=/docker-entrypoint-initdb.d; X=/tmp/pgvector-tuning.conf; echo \"CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\" > $I/zz-pgvector-extensions.sql; k() { v=$1; if [ $v -lt $2 ]; then v=$2; fi; if [ $v -gt $3 ]; then v=$3; fi; echo $v; }; n() { case \"$1\" in \"\"|*[!0-9]*) echo $2 ;; *) echo $1 ;; esac; }; w() { echo \"$1 = $2\" >> $X; }; if [ \"${PGVECTOR_TUNING:-auto}\" = off ]; then rm -f $F $I/zz-pgvector-conf.sh; echo \"pgvector-tune: PGVECTOR_TUNING=off, Postgres defaults apply\"; else H=$(( $(n \"$(grep -m 1 MemTotal /proc/meminfo | tr -s \" \" | cut -d \" \" -f 2)\" 1048576) / 1024 )); M=$(( $(n \"$(cat /sys/fs/cgroup/memory.max 2>/dev/null)\" $((H * 1048576))) / 1048576 )); if [ $M -gt $H ]; then M=$H; fi; B=$(k $(n \"$PG_MEMORY_LIMIT_MB\" $(k $M 256 8192)) 256 4194304); N=$(nproc); read -r Q P 2>/dev/null < /sys/fs/cgroup/cpu.max || Q=max; case \"$Q\" in \"\"|*[!0-9]*) ;; *) N=$(k $(( (Q + P - 1) / P )) 1 $N) ;; esac; N=$(k $(n \"$PG_CPU_LIMIT\" $(k $N 1 8)) 1 256); S=$(( $(n \"$(df -Pk /dev/shm 2>/dev/null | tail -n 1 | tr -s \" \" | cut -d \" \" -f 2)\" 65536) / 1024 )); SB=$(k $((B / 4)) 128 1048576); MW=$(k $((B / 4)) 64 2048); PM=$(k $((N - 1)) 0 4); PW=$(k $N 2 256); PG=$(k $((N / 2)) 0 2); FIT=$((S * 3 / 4)); if [ $FIT -lt 128 ]; then PM=0; fi; if [ $PM -gt 0 ]; then MW=$(k $MW 64 $FIT); fi; if [ $S -lt 256 ]; then PG=0; fi; echo \"# pgvector template: rewritten at every boot from budget ${B}MB (container ${M}MB), ${N} cpus, /dev/shm ${S}MB; ALTER SYSTEM overrides it\" > $X; w shared_buffers ${SB}MB; w effective_cache_size $((B * 3 / 4))MB; w maintenance_work_mem ${MW}MB; w autovacuum_work_mem $(k $((B / 16)) 64 $MW)MB; w work_mem $(k $((B / 512)) 4 64)MB; w max_worker_processes $(k $((PW + 4)) 8 512); w max_parallel_workers $PW; w max_parallel_workers_per_gather $PG; w max_parallel_maintenance_workers $PM; w random_page_cost 1.1; w effective_io_concurrency 200; w track_io_timing on; chmod 644 $X; if [ -f $D/PG_VERSION ] && [ -f $C ]; then install -o postgres -g postgres -m 600 $X $F; grep -qsF \"include_if_exists = pgvector-tuning.conf\" $C || echo \"include_if_exists = pgvector-tuning.conf\" >> $C; sync $F $C 2>/dev/null || true; else echo \"cp $X $F && chmod 600 $F && { grep -qsF pgvector-tuning.conf $C || echo include_if_exists = pgvector-tuning.conf >> $C; }\" > $I/zz-pgvector-conf.sh; fi; echo \"pgvector-tune: $(paste -sd \" \" $X)\"; fi; exec /usr/local/bin/wrapper.sh \"$@\"' pgvector-start postgres -p 5432 -c listen_addresses=*",
+      "preDeployCommand": null,
+      "healthcheckPath": null,
+      "healthcheckTimeout": null,
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10,
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/var/lib/postgresql/data"
+      },
+      "variables": {
+        "PGDATA": {
+          "defaultValue": "/var/lib/postgresql/data/pgdata",
+          "description": "Data directory inside the volume (Railway base layout; the image refuses anything outside /var/lib/postgresql/data).",
+          "required": true
+        },
+        "PGHOST": {
+          "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "Private hostname of this database (postgres.railway.internal), used by the Data panel and the other services.",
+          "required": true
+        },
+        "PGPORT": {
+          "defaultValue": "5432",
+          "description": "Postgres port.",
+          "required": true
+        },
+        "PGUSER": {
+          "defaultValue": "${{POSTGRES_USER}}",
+          "description": "User for the Data panel and the other services.",
+          "required": true
+        },
+        "PGPASSWORD": {
+          "defaultValue": "${{POSTGRES_PASSWORD}}",
+          "description": "Password for the Data panel and the other services.",
+          "required": true
+        },
+        "PGDATABASE": {
+          "defaultValue": "${{POSTGRES_DB}}",
+          "description": "Database for the Data panel and the other services.",
+          "required": true
+        },
+        "POSTGRES_USER": {
+          "defaultValue": "postgres",
+          "description": "Superuser created on first boot.",
+          "required": true
+        },
+        "POSTGRES_PASSWORD": {
+          "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+          "description": "Superuser password, generated at deploy (letters only, so it is URL-safe). Changing it later needs ALTER USER too.",
+          "required": true
+        },
+        "POSTGRES_DB": {
+          "defaultValue": "railway",
+          "description": "Database created on first boot; the vector and pg_stat_statements extensions are created in it, and Utopia's migrations use it.",
+          "required": true
+        },
+        "DATABASE_URL": {
+          "defaultValue": "postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}",
+          "description": "Private connection string (Railway convention).",
+          "required": false
+        },
+        "SSL_CERT_DAYS": {
+          "defaultValue": "820",
+          "description": "Validity of the self-signed TLS certificate.",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "60",
+          "description": "Time Postgres gets to shut down cleanly on redeploy.",
+          "required": false
+        },
+        "RAILWAY_SHM_SIZE_BYTES": {
+          "defaultValue": "1073741824",
+          "description": "Size of /dev/shm (1 GiB; Railway default 64 MB) for parallel HNSW index builds and parallel queries; only memory in use is billed.",
+          "required": false
+        },
+        "PGVECTOR_TUNING": {
+          "defaultValue": "auto",
+          "description": "auto = size memory and parallelism from the container limits at every boot; off = Postgres defaults.",
+          "required": false
+        },
+        "PG_MEMORY_LIMIT_MB": {
+          "defaultValue": "auto",
+          "description": "RAM the tuning plans for. auto = the container limit capped at 8192 MB.",
+          "required": false
+        },
+        "PG_CPU_LIMIT": {
+          "defaultValue": "auto",
+          "description": "CPUs the tuning plans for. auto = the container CPU quota capped at 8.",
+          "required": false
+        }
+      }
+    }
+  }
+}

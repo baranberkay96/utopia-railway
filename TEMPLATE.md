@@ -1,10 +1,10 @@
-# Utopia v0.1 RC9 Enterprise World Model — Railway template spec
+# Utopia Enterprise World Model — Railway template spec
 
 ## Listing
 
 | Field | Value |
 |---|---|
-| Name | **Utopia v0.1 RC9 Enterprise World Model** (38 chars; `v0.1 RC9` = the pinned pre-release `v0.1.0-rc9`; "enterprise world model" is upstream's own description) |
+| Name | **Utopia Enterprise World Model** (38 chars; `v0.1 RC9` = the pinned pre-release `v0.1.0-rc9`; "enterprise world model" is upstream's own description) |
 | Description | Bitemporal knowledge graph from your documents: search, chat, review, MCP (73 chars) |
 | Category | AI/ML |
 | Tags | utopia, knowledge-graph, bitemporal, ontology, rag, mcp, pgvector, rust |

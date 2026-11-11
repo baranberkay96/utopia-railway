@@ -1,5 +1,6 @@
 {
-  "name": "Utopia v0.1 RC9 Enterprise World Model",
+  "name": "Utopia Enterprise World Model",
+  "idSeed": "Utopia v0.1 RC9 Enterprise World Model",
   "description": "Bitemporal knowledge graph from your documents: search, chat, review, MCP",
   "category": "AI/ML",
   "tags": [
